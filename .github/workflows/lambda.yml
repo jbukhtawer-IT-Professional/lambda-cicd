@@ -8,6 +8,9 @@ on:
     paths:
       - 'lambda/**'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy-lambda: # Name of our job
     runs-on: ubuntu-latest # Sets or specifies the runner
