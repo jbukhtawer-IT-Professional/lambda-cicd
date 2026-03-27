@@ -23,7 +23,7 @@ Resources:
 
   Outputs:
     BucketName:
-      Description: 'Name of created s3 Bucket'
+      Description: 'Name of created s3 Bucket JB'
       Value: !Ref MyS3Bucket
 
 
