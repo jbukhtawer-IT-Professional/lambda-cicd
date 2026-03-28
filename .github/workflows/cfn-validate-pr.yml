@@ -6,38 +6,32 @@ on:
       - 'cloudformation/**'
 
 permissions:
-  pull-requests: write 
+  pull-requests: write
   contents: read
 
 jobs:
   validate-cfn:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: eu-west-2
 
-      - name: Validate CloudFormation template
+      - name: Validate Cloudformation template
         run: |
-          aws cloudformation validate-template \
-            --template-body file://cloudformation/s3-bucket.yml
+          aws cloudformation validate-template --template-body file://cloudformation/s3-bucket.yml
 
       - name: Deploy our stack
         run: |
-          stack_name="pr-test-stack-${{ github.event.pull_request.number }}"
-          aws cloudformation deploy \
-            --stack-name $stack_name \
-            --template-file cloudformation/s3-bucket.yml \
-            --parameter-overrides Environment=test \
-            --capabilities CAPABILITY_NAMED_IAM
+          stack_name="pr-test-stack-${{github.event.pull_request.number}}"
+          aws cloudformation create-stack --stack-name $stack_name --template-body file://cloudformation/s3-bucket.yml --parameters ParameterKey=Environment,ParameterValue=test
 
-      - name: Comment PR
+      - name: Comment on the PR
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -46,22 +40,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `CloudFormation test stack deployed: pr-test-stack-${context.issue.number}`
+              body: 'Cloudformation test stack deployed. Stack name: pr-test-stack-${{ github.event.pull_request.number}}'
             })
-
-  cleanup-on-merge:
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
-
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Delete Test Stack
-        run: |
-          stack_name="pr-test-stack-${{ github.event.pull_request.number }}"
-          aws cloudformation delete-stack --stack-name $stack_name
